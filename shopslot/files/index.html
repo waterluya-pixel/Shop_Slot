@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShopSlot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<script>
+  /* Apply the saved theme (or the device setting) before the page paints, so there is no flash. */
+  try {
+    var t = localStorage.getItem('shopslot:theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+</script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <h1 class="brand">Shop<span>Slot</span></h1>
+  <div id="userbox" class="userbox" hidden>
+    <b id="uname"></b><span id="urole" class="pill"></span><button id="logout" type="button">Log out</button>
+  </div>
+</header>
+<div id="tabs" class="tabs" hidden><button class="p" id="tabBtn" type="button"></button></div>
+
+<main>
+  <!-- AUTH: guests only -->
+  <section id="auth">
+    <form id="loginForm" class="card auth">
+      <h2>Welcome back</h2>
+      <p class="sub">Log in to your ShopSlot account.</p>
+      <label>Email<input id="lEmail" type="email" placeholder="juan@email.com" required></label>
+      <label>Password<input id="lPass" type="password" placeholder="Password" required></label>
+      <button class="p wide" type="submit">Log in</button>
+      <p class="sub">No account yet? <a href="#" id="toSignup">Sign up</a></p>
+    </form>
+
+    <form id="signupForm" class="card auth" hidden>
+      <h2>Create your account</h2>
+      <p class="sub">Sign up to reserve a PC at the shop.</p>
+      <label>Full name<input id="sName" placeholder="Juan Dela Cruz" required maxlength="50"></label>
+      <label>Email<input id="sEmail" type="email" placeholder="juan@email.com" required></label>
+      <label>Password<input id="sPass" type="password" minlength="6" placeholder="At least 6 characters" required></label>
+      <label>Confirm password<input id="sPass2" type="password" placeholder="Repeat password" required></label>
+      <span class="lbl">Account type</span>
+      <div class="types">
+        <label class="type"><input type="radio" name="sRole" value="regular" checked><b>Regular</b><small>Up to 2 slots per day. Standard PCs.</small></label>
+        <label class="type"><input type="radio" name="sRole" value="vip"><b>VIP</b><small>Up to 4 slots per day. Access to VIP-only PCs.</small></label>
+      </div>
+      <button class="p wide" type="submit">Create account</button>
+      <p class="sub">Already have an account? <a href="#" id="toLogin">Log in</a></p>
+      <p class="sub">Admin accounts are created by the shop owner, not through sign up.</p>
+    </form>
+    <div id="authMsg" class="authmsg"></div>
+  </section>
+
+  <!-- CUSTOMER VIEW: Regular and VIP users only -->
+  <section id="reserve" hidden>
+    <div class="card">
+      <h2>Availability grid</h2>
+      <p class="sub">Pick a computer shop. The number shows free PCs at the time slot you selected below. If a shop is full, choose another one.</p>
+      <div id="shops" class="shops"></div>
+      <div id="fullMsg"></div>
+      <div class="bar">
+        <label>Computer shop<select id="rBranch"></select></label>
+        <label>Date<input type="date" id="rDate"></label>
+        <button id="prevDay" type="button">&larr;</button>
+        <button id="nextDay" type="button">&rarr;</button>
+      </div>
+      <div class="wrap"><table id="grid"></table></div>
+      <p class="legend"><span class="ok">Green: free (click to pick)</span><span class="bad">Red: booked</span><span class="warn">Yellow: PC under maintenance</span><span>Gray: VIP-only PC (upgrade to book)</span></p>
+    </div>
+    <div class="cols">
+      <div class="card stack">
+        <h2>Book a slot</h2>
+        <label>Customer<input id="rCust" readonly></label>
+        <div class="two">
+          <label>PC<select id="rPc"></select></label>
+          <label>Time slot<select id="rSlot"></select></label>
+        </div>
+        <button class="p" id="book" type="button">Reserve</button>
+        <div id="rMsg"></div>
+        <p class="note">Regular: up to 2 slots per day. VIP: up to 4 slots per day and access to VIP-only PCs.</p>
+      </div>
+      <div class="card">
+        <h2>My reservations</h2>
+        <div id="mine"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADMIN VIEW: admin users only -->
+  <section id="admin" hidden>
+    <div class="notice">Admin only: this tab is hidden from Regular and VIP customers. Admin accounts cannot make reservations.</div>
+    <div class="card">
+      <h2>Computer shops</h2>
+      <div class="bar">
+        <label>Computer shop<select id="aBranch"></select></label>
+        <button class="d" id="delBranch" type="button">Delete shop</button>
+        <label>New shop<input id="bName" maxlength="40" placeholder="Shop name"></label>
+        <button id="addBranch" type="button">Add shop</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Reservations</h2>
+      <p class="sub">Customers who booked a PC in the selected shop on the selected date. Admins can view and cancel bookings, but cannot make them.</p>
+      <div class="bar"><label>Date<input type="date" id="aDate"></label></div>
+      <div id="aRes"></div>
+    </div>
+    <div class="card">
+      <h2 id="aTitle">Add a PC</h2>
+      <div class="four">
+        <label>PC name<input id="aName" maxlength="20" placeholder="PC-07"></label>
+        <label>Specs<input id="aSpecs" maxlength="60" placeholder="i7, 32GB RAM, RTX 4060"></label>
+        <label>Type<select id="aType"><option>Standard</option><option>VIP</option></select></label>
+        <label>Status<select id="aStatus"><option>Available</option><option>Maintenance</option></select></label>
+      </div>
+      <div class="bar"><button class="p" id="aSave" type="button">Add PC</button><button id="aCancel" type="button" hidden>Cancel</button></div>
+      <div id="aMsg"></div>
+    </div>
+    <div class="card"><h2>PCs in this shop</h2><div id="pcList"></div></div>
+  </section>
+</main>
+
+<button id="themeBtn" class="theme" type="button" aria-label="Switch between light and dark mode"></button>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
